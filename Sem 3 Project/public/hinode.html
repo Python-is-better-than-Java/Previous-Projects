@@ -1,0 +1,304 @@
+<html>
+    <head>
+        <title>Osu! Re-adapted</title>
+        <script crossdomain src = "https://unpkg.com/react@16/umd/react.development.js"></script>
+        <script crossdomain src = "https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+        <script src = "https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+        <style>
+            body{
+                margin: 0px;
+                height: 100%;
+                background: url(bgimage1.png);
+                background-color: rgb(196, 76, 64);
+                background-size: 50%;
+                background-position: center center;
+                background-repeat: no-repeat;
+            }
+            div#altscreen{
+                background-color: black;
+                float:right;
+                opacity: 90%;
+                height: 100%;
+                margin: 0%;
+                width: 95%;
+                padding: 0px;
+                display: none;
+                color: white;
+            }
+            div#bg{
+                background-color: black;
+                float:right;
+                opacity: 90%;
+                height: 100%;
+                margin: 0%;
+                width: 85%;
+                padding: 0px;
+            }
+            div#buttons{
+                float:left;
+                margin: 0%;
+                width: 5%;
+                height: 100%;
+                background-color: black;
+                color: white;
+            }
+            div#scoring{
+                float:right;
+                width: 10%;
+                height: 100%;
+                background-color: black;
+                margin: 0%;
+                color: white;
+                text-align: center;
+                font-size: large;
+                font-family: cursive;
+            }
+            div#endscreen{
+                display: none;
+                background-color: black;
+                opacity: 90%;
+                height: 100%;
+                margin: 0%;
+                padding: 0px;
+                color: white
+            }
+            circle{
+                transition: all 0.3s ease;
+            }
+            circle#ref{
+                display: none;
+                stroke-dasharray: 10px;
+                animation: dash 273s infinite
+            }
+            @keyframes dash {
+                to{
+                    stroke-dashoffset: -100000;
+                }
+            }
+            text#header{
+                font-size: xx-large;
+                fill: white;
+                font-weight: bold;
+                font-family: cursive;
+            }
+            line#pointer{
+                stroke: gray;
+                stroke-width: 2;
+                stroke-dasharray: 50px;
+                animation: dash1 273s infinite
+            }
+            @keyframes dash1{
+                to{
+                    stroke-dashoffset: -100000;
+                }
+            }
+            circle#timer{
+                stroke-dasharray: 4000;
+                stroke-dashoffset: 4000;
+                stroke-width: 5px;
+                opacity: 50%;
+                transition: all 0.3s ease;
+                animation: dash2 548s infinite backwards;
+                animation-play-state: paused;
+            }
+            @keyframes fade{
+                0% {opacity: 0}
+                100% {opacity: 1}
+            }
+            @keyframes dash2{
+                to{
+                    stroke-dashoffset: 0;
+                }
+            }
+            line#decor{
+                stroke-dasharray: 25px;
+                stroke-width: 3px;
+                opacity: 50%;
+                transition: all 0.3s ease;
+                animation: dash3 273s infinite;
+            }
+            @keyframes dash3{
+                to{
+                    stroke-dashoffset: 100000;
+                }
+            }
+            text#subhead{
+                font-size: large;
+                fill: white;
+                font-weight: bold;
+                font-family: cursive;
+            }
+            button#pause{
+                margin: 10px;
+            }
+            button#play{
+                margin: 10px;
+                display: none;
+            }
+            div#final{
+                font-size: large;
+                font-family: cursive;
+                font-weight: bold;
+                text-align: center;
+            }
+            form{
+                text-align: center;
+                font-size: large;
+                font-family: cursive;
+                font-weight: bold;
+            }
+        </style>
+    </head>
+    <body>
+        <div id = "buttons">
+            <button id = "pause">Pause</button>
+            <button id = "play">Play</button>
+        </div>
+        <div id = "Scoring">Score
+            <div id = "score"></div>
+        </div>
+        <div id = "bg">
+            <audio id = "song" src = "hinode.mp3" preload="auto"></audio>
+        </div>
+        <div id = "altscreen">
+            <h1 style = "text-align: center;">PAUSED</h1>
+        </div>
+        <div id = "endscreen">
+            <h1 style = "text-align: center;">SCORE: </h1>
+            <div id = "final"></div>
+            <form action = "/end" method = "post">
+                <label>Enter name: </label>
+                <input type = "text" name = "uname" autofocus placeholder = "Eg.ABC"/><br/>
+                <label>Enter Score: </label>
+                <input type = "text" name = "uscore" placeholder = "Please enter the score displayed above"/><br/>
+                <input type = "submit" value = "submit"/>
+            </form>
+        </div>
+        <script type = "text/babel">
+            let i = 0;
+            let bpm = (2/2.75)*1000;
+            let executed = 0;
+            let colours = ["red", "orange", "yellow", "green", "cyan", "indigo", "violet", "pink", "blue"];
+            let positionx = [350, 450, 550, 650, 750, 800, 750, 620, 490];
+            let positiony = [450, 550, 250, 480, 400, 320, 200, 280, 360];
+            let player = document.getElementById("song");
+            var myinterval, countinterval, change; 
+            class Circle extends React.Component{
+                constructor(props){
+                    super(props)
+                    this.state = {
+                        score: 0,
+                        posx: 680, 
+                        posx1: 680,
+                        posy: 360, 
+                        posy1: 360,
+                        colour: "white",
+                        colour1: "white",
+                        progress: 0
+                    }
+                    this.change = this.change.bind(this)
+                    this.mouse = this.mouse.bind(this)
+                    window.access = this
+                }
+                componentDidMount(){
+                    this.end = this.finisher
+                }
+                mouse = ()=>{
+                    let clicker = document.querySelector("#main");
+                    clicker.addEventListener("click", this.change, true);
+                }
+                change = ()=>{
+                    if(executed == 0)
+                    {
+                        document.getElementById("ref").style.fillOpacity = 0;
+                        document.getElementById("ref").style.display = "block"
+                        document.getElementById("subhead").style.display = "none"
+                        document.getElementById('header').style.display = "none"
+                        document.getElementById('timer').style.animationPlayState = "running"
+                        player.play();
+                        myinterval = setInterval(()=>{
+                            this.setState({
+                                posx: positionx[i],
+                                posx1: positionx[(i+1)%positionx.length],
+                                posy: positiony[i],
+                                posy1: positiony[(i+1)%positionx.length],
+                                colour: colours[i],
+                                colour1: colours[(i+1)%positionx.length]
+                            })
+                            i = (i+1)%positionx.length;
+                        }, bpm/2);
+                        countinterval = setInterval(()=>{
+                            this.setState((prevState)=>{
+                                return{
+                                    progress: prevState.progress + 1
+                                }
+                            })
+                            if(this.state.progress == "10")
+                            {
+                                clearInterval(myinterval);
+                                clearInterval(countinterval);
+                                document.getElementById("buttons").style.display = "none"
+                                document.getElementById("bg").style.display = "none"
+                                document.getElementById("Scoring").style.display = "none"
+                                document.getElementById("endscreen").style.display = "block"
+                                document.getElementById("final").innerHTML = this.state.score
+                            }
+                            console.log(this.state.progress);
+                        }, 1000);
+                        executed = 1;
+                    }
+                    else
+                    {
+                        this.setState((prevState)=>{
+                            return{
+                                score: prevState.score + 50
+                            }
+                        })
+                        document.getElementById("score").innerHTML = this.state.score;
+                    }
+                }
+                render(){
+                    return(<div>
+                            <svg height = "100%" width = "100%">
+                                <line id = "decor" x1 = "1080" y1 = '0' x2 = "1080" y2 = "1080" stroke = {this.state.colour1}/>
+                                <line id = "decor" x1 = "268" y1 = '0' x2 = "268" y2 = "1080" stroke = {this.state.colour1}/>
+                                <line id = "decor" x1 = "400" y1 = '0' x2 = "0" y2 = "200" stroke = {this.state.colour1}/>
+                                <line id = "decor" x1 = "950" y1 = '0' x2 = "1400" y2 = "300" stroke = {this.state.colour1}/>
+                                <line id = "decor" x1 = "268" y1 = '0' x2 = "268" y2 = "1080" stroke = {this.state.colour1}/>
+                                <line id = "decor" x1 = "400" y1 = '750' x2 = "0" y2 = "600" stroke = {this.state.colour1}/>
+                                <line id = "decor" x1 = "950" y1 = '750' x2 = "1400" y2 = "540" stroke = {this.state.colour1}/>
+                                <circle id = "timer" cx = "680" cy = "360" r = "500" stroke = {this.state.colour}/>
+                                <text x = "560" y = "25" id = "header">Hinode Basscore</text>
+                                <text x = "620" y = "75" id = "subhead">Click to play!</text>
+                                <circle id = "main" onMouseOver = {this.mouse} cx = {this.state.posx} cy = {this.state.posy} r = "35" stroke = {this.state.colour} fill = "rgb(72,72,72)"/>
+                                <circle id = "ref" cx = {this.state.posx1} cy = {this.state.posy1} r = "35" stroke = {this.state.colour1} fill = "rgb(72,72,72)"/>
+                                <line id = "pointer" x1 = {this.state.posx} y1 = {this.state.posy} x2 = {this.state.posx1} y2 = {this.state.posy1}/> 
+                            </svg>
+                        </div>);
+                }
+            }
+            document.getElementById('pause').addEventListener('click', ()=>{
+                player.pause()
+                executed = 0;
+                clearInterval(myinterval)
+                clearInterval(countinterval)
+                document.getElementById('bg').style.display = 'none'
+                document.getElementById('altscreen').style.display = 'inline'
+                document.getElementById('play').style.display = 'inline'
+                document.getElementById('Scoring').style.display = 'none'
+            })
+            document.getElementById('play').addEventListener('click', ()=>{
+                document.getElementById('altscreen').style.display = 'none'
+                document.getElementById('bg').style.display = 'inline'
+                document.getElementById('play').style.display = 'none'
+                document.getElementById('subhead').style.display = 'block'
+                document.getElementById('header').style.display = 'block'
+                document.getElementById('Scoring').style.display = 'block'
+            })
+            ReactDOM.render(
+                <Circle/>,
+                document.querySelector("#bg")
+            );
+        </script>
+    </body>
+</html>

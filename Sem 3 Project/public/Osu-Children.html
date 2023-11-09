@@ -1,0 +1,147 @@
+<html>
+    <head>
+        <title>Circle</title>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script crossdomain src="https://unpkg.com/react@16/umd/react.development.js"></script>
+        <script crossdomain src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+        <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+
+        <style>
+            #circle{
+                transition: all 0.2s ease;
+            }
+            #end{
+                display: none;
+                background-color: black;
+            }
+            form{
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body style="background-color:black;">
+        <h1 style="position:absolute; color:aliceblue; margin-top:0px; margin-left:600px; font-size:50px;">OSU!</h1>
+        <h2 style="position:absolute; color:aliceblue; margin-top:20px; margin-left:730px; font-size:30px;">Readaptation</h2>
+        <div id="container"></div>
+        <audio id="aud" src="Temp.mp3" style="margin-top: 500px; margin-left: 600px;"></audio>
+
+        <div id="end">
+            <h1 style="text-align:center;">SCORE: </h1>
+            <div id="final"></div>
+            <form action="/user" method="POST">
+                <label>Name:</label>
+                <input type="text" id="myText" name="uname" autofocus placeholder="eg. ABC" /><br/>
+                <label>Score:</label>
+                <input type="text" id="myScore" name="uscore" autofocus placeholder="eg. 10" /><br/>
+                <input type="submit" name="submit" value="submit" /><br/>
+            </form>
+        </div>
+
+        <script type="text/babel">
+            var destination = document.querySelector("#container");
+            var score = 0, scleft = 660;
+            var audio = document.querySelector("#aud");
+            class Circle extends React.Component{
+                constructor(props, context){
+                    super(props, context);
+                    this.state = {img:"Play.png", imgt:"550px", seconds:1, sleft:"660px", tmargin:70 + Math.random() * 300, lmargin:20 + Math.random() * 900, color:Math.floor(Math.random() * 100) % 6, end:0, gover:""};
+                    this.timertick = this.timertick.bind(this);
+                    this.Score = null;
+                    this.setScoreRef = (element) => {
+                        this.Score = element;
+                    };
+                    this.giveScore = (obj) => {
+                        if(audio.paused){}
+                        else{
+                            if(this.state.seconds >= 0){
+                                score = score + 50;
+                                if(score < 50){scleft = 660;}
+                                else if(score < 100){scleft = 650;}
+                                else if(score < 1000){scleft = 640;}
+                                else{scleft = 630;}
+                                console.log(typeof obj);
+                                this.Score.innerHTML = "Score: " + score;
+                                this.setState(()=>{
+                                    return{seconds: 1, sleft:scleft, tmargin:70 + Math.random() * 300, lmargin:20 + Math.random() * 1000, color:Math.floor(Math.random() * 100) % 6}
+                                });
+                            }
+                        }
+                    }
+                    this.SetBut = (obj) => {
+                        if(audio.paused){
+                            audio.play()
+                            this.setState(()=>{
+                                return{img:"Pause.png"}
+                            });
+                        }
+                        else{
+                            audio.pause()
+                            this.setState(()=>{
+                                return{img:"Play.png"}
+                            });
+                        }
+                    }
+                }
+                componentDidMount(){
+                    setInterval(this.timertick, 1000);
+                }
+                timertick(){
+                    if(this.state.end >= 10){
+                        document.getElementById("end").style.display = "block";
+                        this.setState(()=>{
+                            document.getElementById("myScore").value = score;
+                            renderData.shift();
+                            return{gover:"Game Over", imgt:"-1000px", tmargin:-1000}
+                        });
+                    }
+                    else{
+                        if(audio.paused){}
+                        else{
+                            if(this.state.seconds == 0){
+                                clearTimeout(this.ti);
+                                this.setState((prevState)=>{
+                                    return{seconds:1, tmargin:70 + Math.random() * 300, lmargin:20 + Math.random() * 1000, color:Math.floor(Math.random() * 100) % 6, end: prevState.end + 1}
+                                });
+                            }
+                            else{
+                                this.setState((prevState)=>{
+                                    return{seconds: prevState.seconds - 1, end: prevState.end + 1}
+                                });
+                            }
+                        }
+                    }
+                }
+
+                render(){
+                    var circleStyle1 = {
+                        position:"absolute", top:this.state.tmargin, left:this.state.lmargin, display:"inline-block", 
+                        backgroundColor:bgcolors[this.state.color], borderRadius: "50%", border:"5px solid " + bcolors[this.state.color], width:50, height:50
+                    };
+                    var headingStyle1 = {position:"absolute", top:"300px", left:"625px", color:"white", fontSize:50};
+                    var imgStyle = {position:"absolute", top:this.state.imgt, left:"730px", height:40, width:40};
+                    return (
+                        <div>
+                            <div id="circle" style={circleStyle1} onClick={this.giveScore}></div>
+                            <h2 style={headingStyle1}>{this.state.gover}</h2>
+                            <h2 style={{position:"absolute", top:"600px", left:this.state.sleft, color:"white", fontSize:50}} ref={this.setScoreRef}>Score: {score}</h2>
+                            <img src={this.state.img} style={imgStyle} onClick={this.SetBut}/>
+                            <a href="http://localhost:3000">
+                                <img src="Exit.png" style={{position:"absolute", top:"10px", right:"20px", height:40, width:40}} />
+                            </a>
+                        </div>
+                    );
+                }
+            };
+
+            var bcolors = ["blue", "olive", "green", "magenta", "maroon", "purple"];
+            var bgcolors = ["lightblue", "yellow", "lime", "pink", "red", "violet"];
+            var renderData = [], ele = 2;
+            renderData.push(<Circle key={1}/>);
+
+            ReactDOM.render(
+                <div>{renderData}</div>,
+                destination
+            );
+        </script>
+    </body>
+</html>
